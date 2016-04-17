@@ -22,6 +22,7 @@ public class SetWalkingPoint : MonoBehaviour {
 	Color humanColor;
 
 	bool placeSelected = false;
+	bool moving = false;
 
 	// Use this for initialization
 	void Start () {
@@ -47,6 +48,52 @@ public class SetWalkingPoint : MonoBehaviour {
 	void Update () {
 		viewRay = Camera.main.ScreenPointToRay (Input.mousePosition);
 		Physics.Raycast (viewRay, out rayHit);
+
+		if (rayHit.transform != null && rayHit.collider.gameObject.name == "playerCollider" && !moving && startedLookingAtPlayer >= 0) {
+			Debug.Log (startedLookingAtPlayer);
+			Debug.Log (Time.time);
+
+			if (startedLookingAtPlayer == 0) {
+				startedLookingAtPlayer = Time.time;
+			} else if (Time.time - startedLookingAtPlayer < 3) {
+				topAnim.SetFloat ("speedMult", 1f);
+				bottomAnim.SetFloat ("speedMult", 1f);
+				topAnim.speed = 1;
+				bottomAnim.speed = 1;
+				if (!(topAnim.GetCurrentAnimatorStateInfo (0).normalizedTime > 1)) {
+					Debug.Log ("HERE!!");
+					topAnim.Play ("TopLidSlide");
+					bottomAnim.Play ("New Animation");
+				}
+				humanColor.a = Mathf.Lerp (humanColor.a, .1f, Time.deltaTime * 1.8f);
+				humanModel.GetComponent<Renderer> ().material.SetColor ("_Color", humanColor);
+
+				if (humanColor.a <= .2) {
+					playerInvisible = true;
+
+				}
+			} else {
+				startedLookingAtPlayer = -200;
+				humanColor.a = 1; 
+				humanModel.GetComponent<Renderer> ().material.SetColor ("_Color", humanColor);
+
+				topAnim.SetTime (0);
+				bottomAnim.SetTime(0);
+				playerInvisible = false;
+			}
+
+		} else {
+			humanColor.a = 1; 
+			humanModel.GetComponent<Renderer> ().material.SetColor ("_Color", humanColor);
+
+			topAnim.SetTime (0);
+			bottomAnim.SetTime(0);
+			playerInvisible = false;
+			if (startedLookingAtPlayer < 0) {
+				startedLookingAtPlayer++;
+			}
+		}
+
 		if (rayHit.transform != null && rayHit.collider.gameObject.name == "Floor" &&
 		    Vector3.Distance (Camera.main.transform.position, rayHit.point) < 10 && !placeSelected) {
 
@@ -73,49 +120,23 @@ public class SetWalkingPoint : MonoBehaviour {
 
 			if (Input.GetMouseButtonUp (0)) {
 				placeSelected = true;
-
+				moving = true;
 			}
 		} else if (!placeSelected) {
 			walkIndicator.SetActive (false);
 
-		} else {
+		} else if (moving) {
 			walkIndicator.transform.GetChild (0).transform.Rotate (0, 0, 1); 
 			player.transform.position = Vector3.MoveTowards(player.transform.position, newPos, Time.deltaTime);
 			human.transform.rotation = Quaternion.Slerp (human.transform.rotation, newRot, Time.deltaTime);
-			Debug.Log (human.transform.rotation);
-			Debug.Log (newRot);
 			if (player.transform.position == newPos || Input.GetMouseButtonUp (0)) {
 				placeSelected = false;
+				moving = false;
 				walkIndicator.SetActive (false);
 			}
 		}
 
-		if (rayHit.transform != null && rayHit.collider.gameObject.name == "playerCollider") {
-			if (startedLookingAtPlayer == 0) {
-				startedLookingAtPlayer = Time.time;
-			} else {
-				topAnim.SetFloat("speedMult", 1f);
-				bottomAnim.SetFloat("speedMult", 1f);
-				topAnim.Play ("TopLidSlide", 1, 0);
-				bottomAnim.Play ("New Animation", 1, 0);
-				Debug.Log ("HERE");
 
-				humanColor.a = Mathf.Lerp (humanColor.a, .3f, Time.deltaTime*2); 
-				humanModel.GetComponent<Renderer> ().material.SetColor ("_Color", humanColor);
-				playerInvisible = true;
-			}
-
-		} else if (startedLookingAtPlayer != 0) {
-			startedLookingAtPlayer = 0;
-			humanColor.a = 1; 
-			humanModel.GetComponent<Renderer> ().material.SetColor("_Color", humanColor);
-
-			topAnim.SetFloat("speedMult", -1f);
-			bottomAnim.SetFloat("speedMult", -1f);
-			topAnim.Play ("TopLidSlide");
-			bottomAnim.Play ("New Animation");
-			playerInvisible = false;
-		}
 			
 	}
 }
