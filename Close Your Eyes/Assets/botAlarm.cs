@@ -10,6 +10,14 @@ public class botAlarm : MonoBehaviour {
 	public float laserSpeed;
 	public int onFor;
 	public int offFor;
+	public float laserX;
+	public float laserY;
+	public float laserZ;
+	public float laserRot;
+
+	public float respawnX;
+	public float respawnZ;
+
 	public Material laserMat;
 	public AudioClip alarm1;
 	public AudioClip alarm2;
@@ -42,10 +50,10 @@ public class botAlarm : MonoBehaviour {
 		MeshRenderer meshRenderer = laser.AddComponent<MeshRenderer>();
 		meshRenderer.material = laserMat;
 
-		laserOrigin = transform.parent.transform.position;
-		laserOrigin.x -= 2.2f;
-		laserOrigin.y += 1f;
-		laserOrigin.z += 1.2f;
+		laserOrigin = transform.parent.FindChild("Cube_001").GetComponent<Renderer>().bounds.center;
+		laserOrigin.x -= 0.8f + laserX;
+		laserOrigin.y += 0.44f + laserY;
+		laserOrigin.z -= 0.125f + laserZ;
 
 		volLine = laser.AddComponent<VolumetricLineBehavior>();
 		volLine.SetLinePropertiesAtStart = true;
@@ -68,17 +76,17 @@ public class botAlarm : MonoBehaviour {
 		float pitch = Random.Range (0.5f, 1.5f);
 		generatorSource = gameObject.AddComponent<AudioSource>();
 		generatorSource.clip = generatorSus;
-		generatorSource.volume = .2f;
+		generatorSource.volume = .1f;
 		generatorSource.pitch = pitch;
 
 		generatorSource2 = gameObject.AddComponent<AudioSource>();
 		generatorSource2.clip = generatorOn;
-		generatorSource2.volume = .2f;
+		generatorSource2.volume = .1f;
 		generatorSource2.pitch = pitch;
 
 		generatorSource3 = gameObject.AddComponent<AudioSource>();
 		generatorSource3.clip = generatorOff;
-		generatorSource3.volume = .2f;
+		generatorSource3.volume = .1f;
 		generatorSource3.pitch = pitch;
 	}
 	
@@ -91,18 +99,22 @@ public class botAlarm : MonoBehaviour {
 			if (Mathf.Abs (laserAngle) >= FOV / 2f) {
 				laserDirec *= -1;
 			}
-			botRay = new Ray (laserOrigin, Quaternion.Euler (0, laserAngle, 0) * (Quaternion.Euler (4, 304, 6) * (laserOrigin.normalized + Vector3.left)).normalized);
+			botRay = new Ray (laserOrigin, Quaternion.Euler (0, laserAngle + laserRot, 0) * (Quaternion.Euler (4, 304, 6) * (laserOrigin.normalized + Vector3.left)).normalized);
 			Physics.Raycast (botRay, out rayHit);
 
 			if (rayHit.transform != null) {
 				volLine.EndPos = rayHit.point;
 				if (rayHit.collider.gameObject.name == "playerCollider") {
-					if (ded == 0) {
-						ded = Time.time;
-						alarmSource1.pitch = Random.Range (0.5f, 1.5f);
-						alarmSource1.Play ();
-						alarmSource2.pitch = Random.Range (0.5f, 1.5f);
-						alarmSource2.Play ();
+					SetWalkingPoint camScript = GameObject.FindWithTag("Player").transform.FindChild ("Main Camera").GetComponent<SetWalkingPoint>();
+
+					if (!camScript.playerInvisible) {
+						if (ded == 0) {
+							ded = Time.time;
+							alarmSource1.pitch = Random.Range (0.5f, 1.5f);
+							alarmSource1.Play ();
+							alarmSource2.pitch = Random.Range (0.5f, 1.5f);
+							alarmSource2.Play ();
+						}
 					}
 				}
 			}
@@ -128,8 +140,16 @@ public class botAlarm : MonoBehaviour {
 		if (ded > 0 && ded + 5 < Time.time) {
 			alarmSource1.Stop ();
 			alarmSource2.Stop ();
-			GameObject.FindWithTag ("Player").transform.position = new Vector3 (0, GameObject.Find ("Player").transform.position.y, 0);
-			GameObject.FindWithTag ("Player").transform.rotation = new Quaternion ();
+			GameObject playa = GameObject.FindWithTag ("Player");
+			playa.transform.position = new Vector3 (respawnX, GameObject.Find ("Player").transform.position.y, respawnZ);
+			playa.transform.rotation = new Quaternion ();
+
+			SetWalkingPoint camScript = playa.transform.FindChild ("Main Camera").GetComponent<SetWalkingPoint>();
+			camScript.moving = false;
+			camScript.placeSelected = false;
+			camScript.playerInvisible = false;
+			camScript.walkIndicator.SetActive (false);
+
 			ded = 0;
 		}
 	}

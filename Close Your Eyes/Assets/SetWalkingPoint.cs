@@ -5,7 +5,7 @@ public class SetWalkingPoint : MonoBehaviour {
 	Ray viewRay = new Ray();
 	RaycastHit rayHit;
 	public GameObject walkIndicatorPrefab;
-	GameObject walkIndicator;
+	public GameObject walkIndicator;
 	Vector3 newPos;
 	Quaternion newRot;
 	GameObject player;
@@ -21,8 +21,8 @@ public class SetWalkingPoint : MonoBehaviour {
 	public bool playerInvisible = false;
 	Color humanColor;
 
-	bool placeSelected = false;
-	bool moving = false;
+	public bool placeSelected = false;
+	public bool moving = false;
 
 	// Use this for initialization
 	void Start () {
@@ -55,17 +55,17 @@ public class SetWalkingPoint : MonoBehaviour {
 
 			if (startedLookingAtPlayer == 0) {
 				startedLookingAtPlayer = Time.time;
-			} else if (Time.time - startedLookingAtPlayer < 3) {
+			} else if (Time.time - startedLookingAtPlayer < 5) {
 				topAnim.SetFloat ("speedMult", 1f);
 				bottomAnim.SetFloat ("speedMult", 1f);
 				topAnim.speed = 1;
 				bottomAnim.speed = 1;
 				if (!(topAnim.GetCurrentAnimatorStateInfo (0).normalizedTime > 1)) {
-					Debug.Log ("HERE!!");
 					topAnim.Play ("TopLidSlide");
 					bottomAnim.Play ("New Animation");
 				}
 				humanColor.a = Mathf.Lerp (humanColor.a, .1f, Time.deltaTime * 1.8f);
+				humanModel.GetComponent<Renderer> ().material.SetFloat ("_Mode", 3);
 				humanModel.GetComponent<Renderer> ().material.SetColor ("_Color", humanColor);
 
 				if (humanColor.a <= .2) {
@@ -75,6 +75,7 @@ public class SetWalkingPoint : MonoBehaviour {
 			} else {
 				startedLookingAtPlayer = -200;
 				humanColor.a = 1; 
+				humanModel.GetComponent<Renderer> ().material.SetFloat ("_Mode", 0);
 				humanModel.GetComponent<Renderer> ().material.SetColor ("_Color", humanColor);
 
 				topAnim.SetTime (0);
@@ -84,6 +85,7 @@ public class SetWalkingPoint : MonoBehaviour {
 
 		} else {
 			humanColor.a = 1; 
+			humanModel.GetComponent<Renderer> ().material.SetFloat ("_Mode", 0);
 			humanModel.GetComponent<Renderer> ().material.SetColor ("_Color", humanColor);
 
 			topAnim.SetTime (0);
@@ -127,7 +129,7 @@ public class SetWalkingPoint : MonoBehaviour {
 
 		} else if (moving) {
 			walkIndicator.transform.GetChild (0).transform.Rotate (0, 0, 1); 
-			player.transform.position = Vector3.MoveTowards(player.transform.position, newPos, Time.deltaTime);
+			player.transform.position = Vector3.MoveTowards(player.transform.position, newPos, Time.deltaTime*1.2f);
 			human.transform.rotation = Quaternion.Slerp (human.transform.rotation, newRot, Time.deltaTime);
 			if (player.transform.position == newPos || Input.GetMouseButtonUp (0)) {
 				placeSelected = false;
